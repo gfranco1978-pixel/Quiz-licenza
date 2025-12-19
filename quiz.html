@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Patente Multi-lingua</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f7f6; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .lang-selector { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
+        .flag { width: 50px; cursor: pointer; transition: transform 0.2s; border: 2px solid transparent; border-radius: 5px; }
+        .flag:hover { transform: scale(1.1); }
+        .flag.active { border-color: var(--accent-color); box-shadow: 0 0 10px rgba(52, 152, 219, 0.5); }
+        .progress-container { width: 100%; background-color: #ddd; border-radius: 20px; margin-bottom: 20px; }
+        #progress-bar { width: 0%; height: 20px; background-color: var(--success-color); border-radius: 20px; transition: width 0.3s; }
+        .quiz-card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .question-text { font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; color: var(--primary-color); }
+        .options { display: flex; gap: 15px; }
+        button { padding: 10px 25px; font-size: 1rem; cursor: pointer; border: none; border-radius: 5px; transition: opacity 0.2s; }
+        .btn-true { background-color: var(--success-color); color: white; }
+        .btn-false { background-color: var(--error-color); color: white; }
+        button:hover { opacity: 0.8; }
+        #result { text-align: center; display: none; }
+        .score-box { font-size: 2rem; font-weight: bold; color: var(--accent-color); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="lang-selector">
+        <img src="https://flagcdn.com/w80/it.png" class="flag active" onclick="setLanguage('ita')" alt="Italiano">
+        <img src="https://flagcdn.com/w80/es.png" class="flag" onclick="setLanguage('esp')" alt="Español">
+        <img src="https://flagcdn.com/w80/gb.png" class="flag" onclick="setLanguage('eng')" alt="English">
+    </div>
+    <h1 id="title">Quiz Patente</h1>
+</div>
+
+<div class="progress-container">
+    <div id="progress-bar"></div>
+</div>
+
+<div id="quiz-container">
+    <div class="quiz-card">
+        <div id="question" class="question-text"></div>
+        <div class="options">
+            <button class="btn-true" onclick="checkAnswer(true)">VERO / TRUE / VERDADERO</button>
+            <button class="btn-false" onclick="checkAnswer(false)">FALSO / FALSE</button>
+        </div>
+    </div>
+</div>
+
+<div id="result" class="quiz-card">
+    <h2 id="result-text">Quiz Completato!</h2>
+    <div class="score-box" id="score-display">0 / 0</div>
+    <button onclick="location.reload()" style="background: var(--primary-color); color: white;">Riprova / Restart</button>
+</div>
+
+<script>
+    // Database domande estratte dalle immagini
+    const questions = [
+        { ita: "Con le gomme lisce devo aumentare la distanza di sicurezza?", eng: "With smooth (worn) tires, must I increase the safety distance?", esp: "¿Con neumáticos desgastados debo aumentar la distancia de seguridad?", ans: true },
+        { ita: "Lo sbandamento di un veicolo in curva è favorito dal carico nella parte posteriore?", eng: "Is a vehicle's skidding in a curve favored by a load in the rear?", esp: "¿El derrape de un vehículo en una curva se ve favorecido por la carga en la parte trasera?", ans: true },
+        { ita: "Con un maggior carico anteriore migliora la sterzata?", eng: "Does a heavier front load improve steering?", esp: "¿Mejora la dirección con una mayor carga delantera?", ans: false },
+        { ita: "L'acquaplaning è favorito dall'acqua alta?", eng: "Is aquaplaning favored by deep water?", esp: "¿El aquaplaning se ve favorecido por el agua profunda?", ans: true },
+        { ita: "Se vedo qualcuno attraversare devo rallentare?", eng: "If I see someone crossing, must I slow down?", esp: "¿Si veo a alguien cruzando debo reducir la velocidad?", ans: true },
+        { ita: "In una strada a senso unico posso parcheggiare a sinistra se lascio 3 m a destra?", eng: "On a one-way street, can I park on the left if I leave 3 meters on the right?", esp: "¿En una calle de sentido único puedo aparcar a la izquierda si dejo 3 m a la derecha?", ans: true },
+        { ita: "Se percorro un incrocio ad alta velocità la colpa è solo di chi non ha dato la precedenza?", eng: "If I cross an intersection at high speed, is the fault only of the person who didn't yield?", esp: "¿Si cruzo una intersección a alta velocidad, la culpa es solo de quien no cedió el paso?", ans: false },
+        { ita: "È vietato parcheggiare o fermarsi, anche per pochi minuti, sul marciapiede?", eng: "Is it forbidden to park or stop, even for a few minutes, on the sidewalk?", esp: "¿Está prohibido aparcar o detenerse, aunque sea por unos minutos, en la acera?", ans: true },
+        { ita: "Per evitare rumori non si deve accelerare inutilmente e ripetutamente se il veicolo è fermo?", eng: "To avoid noises you should not accelerate unnecessarily and repeatedly if the vehicle is stationary.", esp: "Para evitar ruidos, no se debe acelerar innecesariamente y repetidamente si el vehículo está parado.", ans: true },
+        { ita: "Controllare che la spia dell'olio sia accesa correttamente durante la guida?", eng: "Check that the oil light is properly turned on while driving.", esp: "Comprobar que la luz de aviso del aceite esté encendida correctamente mientras se conduce.", ans: false }
+    ];
+
+    let currentLanguage = 'ita';
+    let currentIndex = 0;
+    let score = 0;
+
+    function setLanguage(lang) {
+        currentLanguage = lang;
+        document.querySelectorAll('.flag').forEach(f => f.classList.remove('active'));
+        event.target.classList.add('active');
+        updateQuestion();
+    }
+
+    function updateQuestion() {
+        if (currentIndex < questions.length) {
+            document.getElementById('question').innerText = questions[currentIndex][currentLanguage];
+            const progress = (currentIndex / questions.length) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+        } else {
+            showResult();
+        }
+    }
+
+    function checkAnswer(userAns) {
+        if (userAns === questions[currentIndex].ans) {
+            score++;
+        }
+        currentIndex++;
+        updateQuestion();
+    }
+
+    function showResult() {
+        document.getElementById('quiz-container').style.display = 'none';
+        document.getElementById('progress-bar').style.width = '100%';
+        document.getElementById('result').style.display = 'block';
+        document.getElementById('score-display').innerText = `${score} / ${questions.length}`;
+    }
+
+    // Inizializzazione
+    updateQuestion();
+</script>
+
+</body>
+</html>
