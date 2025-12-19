@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Patente Multi-lingua Completo</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --bg-color: #f4f7f6;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; background-color: var(--bg-color); }
+        .header { text-align: center; margin-bottom: 30px; }
+        .lang-selector { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
+        .flag { width: 50px; cursor: pointer; transition: transform 0.2s; border: 2px solid transparent; border-radius: 5px; opacity: 0.6; }
+        .flag:hover { transform: scale(1.1); opacity: 1; }
+        .flag.active { border-color: var(--accent-color); opacity: 1; box-shadow: 0 0 10px rgba(52, 152, 219, 0.5); }
+        .progress-container { width: 100%; background-color: #ddd; border-radius: 20px; margin-bottom: 20px; overflow: hidden; }
+        #progress-bar { width: 0%; height: 15px; background-color: var(--success-color); transition: width 0.3s; }
+        .quiz-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .question-text { font-size: 1.3rem; font-weight: bold; margin-bottom: 25px; color: var(--primary-color); min-height: 80px; }
+        .options { display: flex; gap: 20px; justify-content: center; }
+        button { padding: 15px 35px; font-size: 1.1rem; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; transition: all 0.2s; }
+        .btn-true { background-color: var(--success-color); color: white; }
+        .btn-false { background-color: var(--error-color); color: white; }
+        button:active { transform: scale(0.95); }
+        #result { text-align: center; display: none; }
+        .score-box { font-size: 3rem; font-weight: bold; color: var(--accent-color); margin: 20px 0; }
+        .counter { margin-bottom: 10px; font-weight: bold; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="lang-selector">
+        <img src="https://flagcdn.com/w80/it.png" class="flag active" onclick="setLanguage('ita', this)" alt="Italiano">
+        <img src="https://flagcdn.com/w80/es.png" class="flag" onclick="setLanguage('esp', this)" alt="Español">
+        <img src="https://flagcdn.com/w80/gb.png" class="flag" onclick="setLanguage('eng', this)" alt="English">
+    </div>
+    <h1 id="main-title">Quiz Patente</h1>
+</div>
+
+<div class="counter" id="question-counter">Domanda 1 di 27</div>
+<div class="progress-container">
+    <div id="progress-bar"></div>
+</div>
+
+<div id="quiz-container">
+    <div class="quiz-card">
+        <div id="question" class="question-text"></div>
+        <div class="options">
+            <button class="btn-true" id="btn-v" onclick="checkAnswer(true)">VERO</button>
+            <button class="btn-false" id="btn-f" onclick="checkAnswer(false)">FALSO</button>
+        </div>
+    </div>
+</div>
+
+<div id="result" class="quiz-card">
+    <h2 id="result-text">Quiz Completato!</h2>
+    <div class="score-box" id="score-display">0 / 0</div>
+    <button onclick="location.reload()" style="background: var(--primary-color); color: white;">Ricomincia / Restart</button>
+</div>
+
+<script>
+    const questions = [
+        // Immagine 1 e 2 (Prima parte)
+        { ita: "Con le gomme lisce devo aumentare la distanza di sicurezza?", eng: "With smooth (worn) tires, must I increase the safety distance?", esp: "¿Con neumáticos desgastados debo aumentar la distancia de seguridad?", ans: true },
+        { ita: "Lo sbandamento di un veicolo in curva è favorito dal carico nella parte posteriore?", eng: "Is a vehicle's skidding in a curve favored by a load in the rear?", esp: "¿El derrape de un vehículo en una curva se ve favorecido por la carga en la parte trasera?", ans: true },
+        { ita: "Con un maggior carico anteriore migliora la sterzata?", eng: "Does a heavier front load improve steering?", esp: "¿Mejora la dirección con una mayor carga delantera?", ans: false },
+        { ita: "L'acquaplaning è favorito dall'acqua alta?", eng: "Is aquaplaning favored by deep water?", esp: "¿El aquaplaning se ve favorecido por el agua profunda?", ans: true },
+        { ita: "Se vedo qualcuno attraversare devo rallentare?", eng: "If I see someone crossing, must I slow down?", esp: "¿Si veo a alguien cruzando debo reducir la velocidad?", ans: true },
+        { ita: "In una strada a senso unico posso parcheggiare a sinistra se lascio 3 m a destra?", eng: "On a one-way street, can I park on the left if I leave 3 meters on the right?", esp: "¿En una calle de sentido único puedo aparcar a la izquierda si dejo 3 m a la derecha?", ans: true },
+        { ita: "Se percorro un incrocio ad alta velocità la colpa è solo di chi non ha dato la precedenza?", eng: "If I cross an intersection at high speed, is the fault only of the person who didn't yield?", esp: "¿Si cruzo una intersección a alta velocidad, la culpa es solo de quien no cedió el paso?", ans: false },
+        { ita: "In generale agli incroci, senza segnalazioni, occorre dare precedenza a destra?", eng: "In general at intersections, without signs, is it necessary to yield to the right?", esp: "¿En general en los cruces, sin señales, es necesario ceder el paso a la derecha?", ans: true },
+        { ita: "Alla fermata dell'autobus devo prestare particolare attenzione ai bambini?", eng: "At a bus stop, must I pay particular attention to children?", esp: "¿En la parada del autobús debo prestar especial atención a los niños?", ans: true },
+        { ita: "Alla fermata dell'autobus è possibile parcheggiare? E fermarsi?", eng: "Is it possible to park at a bus stop? Or to stop?", esp: "¿Es posible aparcar en la parada del autobús? ¿Y detenerse?", ans: false },
+        { ita: "Se vedo una palla rotolare in mezzo alla strada devo frenare bruscamente?", eng: "If I see a ball rolling into the middle of the road, must I brake sharply?", esp: "¿Si veo una pelota rodando en medio de la carretera debo frenar bruscamente?", ans: false },
+        { ita: "È vietato parcheggiare o fermarsi, anche per pochi minuti, sul marciapiede?", eng: "Is it forbidden to park or stop, even for a few minutes, on the sidewalk?", esp: "¿Está prohibido aparcar o detenerse, aunque sea por unos minutos, en la acera?", ans: true },
+        { ita: "La targa deve essere posizionata in maniera leggibile?", eng: "Must the license plate be positioned in a legible way?", esp: "¿Debe la matrícula estar colocada de forma legible?", ans: true },
+        { ita: "Le luci devono essere sempre accese nei centri abitati con un'auto?", eng: "Must lights always be on in residential areas with a car?", esp: "¿Deben las luces estar siempre encendidas en los centros urbanos con un coche?", ans: false },
+        { ita: "Le luci devono essere sempre accese nei centri abitati con una moto?", eng: "Must lights always be on in residential areas with a motorcycle?", esp: "¿Deben las luces estar sempre encendidas en los centros urbanos con una moto?", ans: true },
+        { ita: "Se si accende la spia dei freni a motore acceso mi devo fermare?", eng: "If the brake warning light comes on with the engine running, must I stop?", esp: "¿Si se enciende el testigo de los frenos con el motor en marcha debo detenerme?", ans: true },
+        { ita: "In discesa con motore spento il servosterzo non funziona?", eng: "When going downhill with the engine off, does the power steering not work?", esp: "¿En bajada con el motor apagado la dirección asistida no funciona?", ans: false },
+        
+        // Immagine 3 e 4 (Nuova parte)
+        { ita: "Per evitare rumori non si deve accelerare inutilmente e ripetutamente se il veicolo è fermo?", eng: "To avoid noises you should not accelerate unnecessarily and repeatedly if the vehicle is stationary.", esp: "Para evitar ruidos, no se debe acelerar innecesariamente y repetidamente si el vehículo está parado.", ans: true },
+        { ita: "Controllare che la spia dell'olio sia accesa correttamente durante la guida?", eng: "Check that the oil light is properly turned on while driving.", esp: "Comprobar que la luz de aviso del aceite esté encendida correctamente mientras se conduce.", ans: false },
+        { ita: "Il conducente deve indossare un giubbotto ad alta visibilità di notte, anche nei centri abitati, nel caso in cui debba fermarsi sulla strada?", eng: "The driver must wear a high visibility jacket at night, even in the towns, in case he should stop on the road?", esp: "¿El conductor debe llevar un chaleco de alta visibilidad por la noche, incluso en zonas urbanas, si tiene que detenerse?", ans: false },
+        { ita: "Un veicolo a motore non deve portare con sé il certificato di assicurazione?", eng: "A motor vehicle must not carry an insurance certificate?", esp: "¿Un vehículo a motor no debe llevar consigo il certificado de seguro?", ans: false },
+        { ita: "Quando tram o filobus si fermano per passeggeri, il sorpasso può sempre essere effettuato a destra?", eng: "When trams stop for passengers, can overtaking always be done on the right?", esp: "¿Cuando los tranvías paran, el adelantamiento siempre se puede hacer por la derecha?", ans: false },
+        { ita: "È vietato danneggiare piante e lavori stradali?", eng: "It is forbidden to damage plants and road works.", esp: "Está prohibido dañar plantas y obras viales.", ans: true },
+        { ita: "Danneggiare lavori e installazioni stradali è consentito?", eng: "Damaging road works and installations is allowed.", esp: "Está permitido dañar obras e instalaciones viales.", ans: false },
+        { ita: "Se il veicolo perde olio o carburante non si deve informare l'ente proprietario della strada?", eng: "If the vehicle leaks oil or fuel, must the road owner not be informed?", esp: "¿Si el vehículo pierde aceite, no se debe informar al propietario de la vía?", ans: false }
+    ];
+
+    let currentLanguage = 'ita';
+    let currentIndex = 0;
+    let score = 0;
+
+    const labels = {
+        ita: { title: "Quiz Patente", next: "Domanda", v: "VERO", f: "FALSO" },
+        eng: { title: "Driving Quiz", next: "Question", v: "TRUE", f: "FALSE" },
+        esp: { title: "Examen de Conducir", next: "Pregunta", v: "VERDADERO", f: "FALSO" }
+    };
+
+    function setLanguage(lang, element) {
+        currentLanguage = lang;
+        document.querySelectorAll('.flag').forEach(f => f.classList.remove('active'));
+        element.classList.add('active');
+        
+        document.getElementById('main-title').innerText = labels[lang].title;
+        document.getElementById('btn-v').innerText = labels[lang].v;
+        document.getElementById('btn-f').innerText = labels[lang].f;
+        
+        updateQuestion();
+    }
+
+    function updateQuestion() {
+        if (currentIndex < questions.length) {
+            document.getElementById('question-counter').innerText = `${labels[currentLanguage].next} ${currentIndex + 1} di ${questions.length}`;
+            document.getElementById('question').innerText = questions[currentIndex][currentLanguage];
+            const progress = (currentIndex / questions.length) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+        } else {
+            showResult();
+        }
+    }
+
+    function checkAnswer(userAns) {
+        if (userAns === questions[currentIndex].ans) {
+            score++;
+        }
+        currentIndex++;
+        updateQuestion();
+    }
+
+    function showResult() {
+        document.getElementById('quiz-container').style.display = 'none';
+        document.getElementById('question-counter').style.display = 'none';
+        document.getElementById('progress-bar').style.width = '100%';
+        document.getElementById('result').style.display = 'block';
+        document.getElementById('score-display').innerText = `${score} / ${questions.length}`;
+    }
+
+    updateQuestion();
+</script>
+
+</body>
+</html>
